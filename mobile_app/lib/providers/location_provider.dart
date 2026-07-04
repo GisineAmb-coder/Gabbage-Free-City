@@ -1,0 +1,105 @@
+/// Location Provider
+/// Manages location services and permissions
+library;
+
+import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
+
+class LocationProvider with ChangeNotifier {
+  Position? _currentPosition;
+  bool _isLoadingLocation = false;
+  String? _error;
+  bool _hasPermission = false;
+
+  Position? get currentPosition => _currentPosition;
+  bool get isLoadingLocation => _isLoadingLocation;
+  String? get error => _error;
+  bool get hasPermission => _hasPermission;
+
+  /// Check and request location permissions
+  Future<bool> checkPermissions() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _error = 'Location services are disabled. Please enable GPS.';
+      notifyListeners();
+      return false;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _error = 'Location permission denied';
+        notifyListeners();
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _error = 'Location permissions are permanently denied';
+      notifyListeners();
+      return false;
+    }
+
+    _hasPermission = true;
+    _error = null;
+    notifyListeners();
+    return true;
+  }
+
+  /// Get current location
+  Future<Position?> getCurrentLocation() async {
+    _isLoadingLocation = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final hasPermission = await checkPermissions();
+      if (!hasPermission) {
+        _isLoadingLocation = false;
+        notifyListeners();
+        return null;
+      }
+
+      debugPrint('🌍 Fetching current location...');
+      _currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
+
+      debugPrint('✅ Location obtained: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
+      debugPrint('   Accuracy: ${_currentPosition!.accuracy}m');
+      
+      _isLoadingLocation = false;
+      notifyListeners();
+      return _currentPosition;
+      
+    } catch (e) {
+      debugPrint('❌ Location error: $e');
+      _error = 'Failed to get location. Please ensure GPS is enabled and try again.';
+      _isLoadingLocation = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Start listening to location updates (for collectors)
+  Stream<Position> getLocationStream() {
+    return Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // Update every 10 meters
+      ),
+    );
+  }
+
+  /// Update current location from an active stream listener.
+  void setCurrentPosition(Position position) {
+    _currentPosition = position;
+    _error = null;
+    notifyListeners();
+  }
+}

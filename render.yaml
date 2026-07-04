@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: gfc-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: APP_BASE_URL
+        generateValue: true
+      - key: MARZPAY_API_KEY
+        sync: false
+      - key: MARZPAY_API_SECRET
+        sync: false
+      - key: MARZPAY_API_URL
+        value: https://wallet.wearemarz.com/api/v1
+      - key: API_BASE_URL
+        sync: false
+      - key: EGO_SMS_API_USERNAME
+        sync: false
+      - key: EGO_SMS_API_KEY
+        sync: false
+      - key: EGO_SMS_SENDER_ID
+        value: KCCA-GFC
+      - key: EGO_SMS_USE_SANDBOX
+        value: false
+      - key: EGO_SMS_TEST_NUMBERS
+        value: +256783858472,+256785510666
+      - key: EGO_SMS_FORCE_TEST_MODE
+        value: false
+      - key: GOOGLE_MAPS_API_KEY
+        value: your-google-maps-api-key
+      - key: DEFAULT_COLLECTION_FEE
+        value: 5000
